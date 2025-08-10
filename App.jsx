@@ -152,7 +152,7 @@ function Shell() {
   const [transactions, setTransactions] = useLocalState("pf_tx", SAMPLE_TX);
   const [budgets, setBudgets] = useLocalState("pf_budgets", DEFAULT_BUDGETS);
   const [goals, setGoals] = useLocalState("pf_goals", DEFAULT_GOALS);
-  const [expectedIncome, setExpectedIncome] = useLocalState("pf_expected_income", 14000);
+  const [expectedIncome, setExpectedIncome] = useLocalState("pf_expected_income", 0);
 
   // computed history by months (last 12 months)
   const months = useMemo(() => {
