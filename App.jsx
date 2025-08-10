@@ -173,13 +173,7 @@ function Shell() {
     })
   ), [transactions, months]);
 
-  const ctx = {
-    transactions, setTransactions,
-    budgets, setBudgets,
-    goals, setGoals,
-    months, monthlyAgg,
-    expectedIncome, setExpectedIncome,
-  };
+  $1
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -244,7 +238,6 @@ function EditableIncomeKPI({ ctx }){
   const [val, setVal] = useState(String(ctx.expectedIncome||""));
   useEffect(()=>{ setVal(String(ctx.expectedIncome||"")); }, [ctx.expectedIncome]);
   function save(){ const n = Number(val); if(!Number.isFinite(n)||n<0) return; ctx.setExpectedIncome(n); setEditing(false); }
-  const actualIncome = ctx.transactions.filter(t=>t.type==='income' && ym(t.date)===new Date().toISOString().slice(0,7)).reduce((a,b)=>a+b.amount,0);
   return (
     <div className={`bg-white rounded-2xl shadow p-4 ring-1 ring-teal-100`}>
       <div className="flex items-center justify-between">
@@ -262,9 +255,13 @@ function EditableIncomeKPI({ ctx }){
           <button onClick={()=>setEditing(false)} className="px-2 py-1 rounded-lg bg-white border hover:shadow">בטל</button>
         </div>
       )}
-      <div className="text-xs text-teal-700 mt-1">פער מול בפועל: {currency((ctx.expectedIncome||0) - (actualIncome || 0))}</div>
+      <div className="text-xs text-teal-700 mt-1">השוואה: {currency((ctx.expectedIncome||0) - (listIncomeThisMonth(ctx) || 0))} מפריד מול בפועל</div>
     </div>
   );
+}
+function listIncomeThisMonth(ctx){
+  const nowYm = new Date().toISOString().slice(0,7);
+  return ctx.transactions.filter(t=>t.type==='income' && ym(t.date)===nowYm).reduce((a,b)=>a+b.amount,0);
 }
 function KPI({ title, value, tone }) {
   const ring = tone === "ok" ? "ring-emerald-200" : tone === "bad" ? "ring-red-200" : "ring-teal-100";
@@ -274,7 +271,6 @@ function KPI({ title, value, tone }) {
       <div className="text-2xl font-bold">{value}</div>
     </div>
   );
-}
 
 // ---------- Dashboard ----------
 function Dashboard({ ctx }) {
@@ -644,14 +640,14 @@ function TestsPage({ ctx }) {
       { id: 12, date: "2025-01-02", type: "income", amount: 20, category: "", note: "world" },
     ];
     const csv1 = toCSVString(sample);
-    assert("CSV contains newline\\n", csv1.includes("\\n"));
-    assert("CSV line count = header + rows", csv1.split("\\n").length === sample.length + 1, csv1.split("\\n").length);
+    assert("CSV contains newline\\n", csv1.includes("\n"));
+    assert("CSV line count = header + rows", csv1.split("\n").length === sample.length + 1, csv1.split("\n").length);
 
-    const csvCRLF = `id,date,type,amount,category,note\\r\\n1,2025-01-03,expense,15,דלק,gas\\r\\n2,2025-01-04,expense,30,מסעדות,food`;
+    const csvCRLF = `id,date,type,amount,category,note\r\n1,2025-01-03,expense,15,דלק,gas\r\n2,2025-01-04,expense,30,מסעדות,food`;
     const parsedCRLF = parseCSV(csvCRLF);
     assert("parseCSV parses CRLF", parsedCRLF.length === 2, JSON.stringify(parsedCRLF));
 
-    const csvLF = `id,date,type,amount,category,note\\n3,2025-01-05,income,100,,client\\n`;
+    const csvLF = `id,date,type,amount,category,note\n3,2025-01-05,income,100,,client\n`;
     const parsedLF = parseCSV(csvLF);
     assert("parseCSV parses LF", parsedLF.length === 1, JSON.stringify(parsedLF));
 
@@ -666,28 +662,28 @@ function TestsPage({ ctx }) {
 
     // New tests for your requested behavior
     // 1) Unknown type + positive amount -> infer income
-    const inferPos = `date,amount\\n2025-08-01,123.45`;
+    const inferPos = `date,amount\n2025-08-01,123.45`;
     const parsedInferPos = parseCSV(inferPos);
     assert("Infer income from positive amount when type missing", parsedInferPos[0]?.type === 'income');
 
     // 2) Unknown type + negative amount -> infer expense and abs amount
-    const inferNeg = `date,amount\\n2025-08-02,-88.9`;
+    const inferNeg = `date,amount\n2025-08-02,-88.9`;
     const parsedInferNeg = parseCSV(inferNeg);
     assert("Infer expense from negative amount when type missing", parsedInferNeg[0]?.type === 'expense');
     assert("Negative becomes positive magnitude", parsedInferNeg[0]?.amount === 88.9);
 
     // 3) Bank terms credit/debit mapping
-    const creditDebit = `date,type,amount\\n2025-08-03,credit,100\\n2025-08-04,debit,50`;
+    const creditDebit = `date,type,amount\n2025-08-03,credit,100\n2025-08-04,debit,50`;
     const parsedCD = parseCSV(creditDebit);
     assert("'credit' => income", parsedCD[0]?.type === 'income');
     assert("'debit' => expense", parsedCD[1]?.type === 'expense');
 
     // Extra tests for robustness
-    const withBOM = `\\uFEFFdate,type,amount\\n2025-08-07,income,1`;
+    const withBOM = `\uFEFFdate,type,amount\n2025-08-07,income,1`;
     const parsedBOM = parseCSV(withBOM);
     assert("Handles BOM at start", parsedBOM.length === 1);
 
-    const missingCols = `date,amount\\n2025-08-08,10`;
+    const missingCols = `date,amount\n2025-08-08,10`;
     const parsedMissing = parseCSV(missingCols);
     assert("Allows missing type (infer)", parsedMissing.length === 1 && parsedMissing[0].type === 'income');
 
