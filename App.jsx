@@ -173,7 +173,14 @@ function Shell() {
     })
   ), [transactions, months]);
 
-  $1
+  const ctx = {
+    transactions, setTransactions,
+    budgets, setBudgets,
+    goals, setGoals,
+    months, monthlyAgg,
+    expectedIncome, setExpectedIncome,
+  };
+
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -271,6 +278,7 @@ function KPI({ title, value, tone }) {
       <div className="text-2xl font-bold">{value}</div>
     </div>
   );
+}
 
 // ---------- Dashboard ----------
 function Dashboard({ ctx }) {
